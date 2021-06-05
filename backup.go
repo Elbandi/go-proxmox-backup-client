@@ -68,6 +68,13 @@ func (pbs *ProxmoxBackup) Close() {
 	C.proxmox_backup_disconnect(pbs.handle)
 }
 
+func (pbs *ProxmoxBackup) Abort(reason string) {
+	cReason := C.CString(reason)
+	defer C.free(unsafe.Pointer(cReason))
+
+	C.proxmox_backup_abort(pbs.handle, cReason)
+}
+
 func (pbs *ProxmoxBackup) AddConfig(name string, data []byte) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
