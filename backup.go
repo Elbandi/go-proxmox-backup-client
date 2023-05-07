@@ -162,11 +162,15 @@ func (pbs *ProxmoxBackup) RegisterImage(name string, size uint64) (*BackupImage,
 func (image *BackupImage) WriteAt(data []byte, offset int64) (int, error) {
 	var cErr *C.char
 
-	e := C.proxmox_backup_write_data(image.proxmox.handle, image.dev, (*C.uchar)(unsafe.Pointer(&data[0])), C.ulong(offset), C.ulong(len(data)), &cErr)
+	dataLen := len(data)
+	e := C.proxmox_backup_write_data(image.proxmox.handle, image.dev, (*C.uchar)(unsafe.Pointer(&data[0])), C.ulong(offset), C.ulong(dataLen), &cErr)
 	if e < 0 {
 		err := C.GoString(cErr)
 		C.proxmox_backup_free_error(cErr)
 		return 0, errors.New(err)
+	}
+	if e == 0 { // reused chunk, fake the written bytes
+		return dataLen, nil
 	}
 	return int(e), nil
 }
