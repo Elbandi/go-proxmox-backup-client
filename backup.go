@@ -4,17 +4,20 @@ package go_proxmox_backup_client
 #cgo LDFLAGS: -lproxmox_backup_qemu
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <proxmox-backup-qemu.h>
 
 ProxmoxBackupHandle *backup_new(const char *repo,
-                                        const char *backup_id,
-                                        uint64_t backup_time,
-                                        const char *password,
-                                        const char *fingerprint,
-                                        char **error) {
+								const char *backup_id,
+								uint64_t backup_time,
+								const char *password,
+								const char *fingerprint,
+								const char *key_file,
+								const char *key_password,
+								char **error) {
 	return proxmox_backup_new(repo, backup_id, backup_time, PROXMOX_BACKUP_DEFAULT_CHUNK_SIZE,
-		password, NULL, NULL, NULL,
-		false, false,
+		password, key_file, key_password, NULL,
+		false, key_file != NULL && strlen(key_file) > 0,
 		fingerprint,
 		error);
 }
@@ -29,7 +32,7 @@ type ProxmoxBackup struct {
 	handle *C.ProxmoxBackupHandle
 }
 
-func NewBackup(repo string, id string, backupTime uint64, password string, fingerprint string) (*ProxmoxBackup, error) {
+func NewBackup(repo string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string) (*ProxmoxBackup, error) {
 	cRepo := C.CString(repo)
 	defer C.free(unsafe.Pointer(cRepo))
 
@@ -42,11 +45,22 @@ func NewBackup(repo string, id string, backupTime uint64, password string, finge
 	cFingerprint := C.CString(fingerprint)
 	defer C.free(unsafe.Pointer(cFingerprint))
 
+	var cKeyFile *C.char
+	if len(keyFile) > 0 {
+		cKeyFile = C.CString(keyFile)
+		defer C.free(unsafe.Pointer(cKeyFile))
+	}
+	var cKeyPassword *C.char
+	if len(keyPassword) > 0 {
+		cKeyPassword = C.CString(keyPassword)
+		defer C.free(unsafe.Pointer(cKeyPassword))
+	}
+
 	var cErr *C.char
 
 	Proxmox := new(ProxmoxBackup)
 
-	Proxmox.handle = C.backup_new(cRepo, cId, C.ulong(backupTime), cPassword, cFingerprint, &cErr)
+	Proxmox.handle = C.backup_new(cRepo, cId, C.ulong(backupTime), cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
 
 	if Proxmox.handle == nil {
 		err := C.GoString(cErr)

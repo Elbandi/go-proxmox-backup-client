@@ -10,9 +10,11 @@ ProxmoxRestoreHandle *restore_new(const char *repo,
 								  const char *snapshot,
 								  const char *password,
 								  const char *fingerprint,
+								  const char *key_file,
+								  const char *key_password,
 								  char **error) {
 	return proxmox_restore_new(repo, snapshot,
-		password, NULL, NULL,
+		password, key_file, key_password,
 		fingerprint,
 		error);
 }
@@ -27,7 +29,7 @@ type ProxmoxRestore struct {
 	handle *C.ProxmoxRestoreHandle
 }
 
-func NewRestore(repo string, btype string, id string, backupTime uint64, password string, fingerprint string) (*ProxmoxRestore, error) {
+func NewRestore(repo string, btype string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string) (*ProxmoxRestore, error) {
 	cRepo := C.CString(repo)
 	defer C.free(unsafe.Pointer(cRepo))
 
@@ -43,6 +45,17 @@ func NewRestore(repo string, btype string, id string, backupTime uint64, passwor
 	cFingerprint := C.CString(fingerprint)
 	defer C.free(unsafe.Pointer(cFingerprint))
 
+	var cKeyFile *C.char
+	if len(keyFile) > 0 {
+		cKeyFile := C.CString(keyFile)
+		defer C.free(unsafe.Pointer(cKeyFile))
+	}
+	var cKeyPassword *C.char
+	if len(keyPassword) > 0 {
+		cKeyPassword := C.CString(keyPassword)
+		defer C.free(unsafe.Pointer(cKeyPassword))
+	}
+
 	var cErr *C.char
 
 	snapshot := C.proxmox_backup_snapshot_string(cType, cId, C.long(int64(backupTime)), &cErr)
@@ -55,7 +68,7 @@ func NewRestore(repo string, btype string, id string, backupTime uint64, passwor
 
 	Proxmox := new(ProxmoxRestore)
 
-	Proxmox.handle = C.restore_new(cRepo, snapshot, cPassword, cFingerprint, &cErr)
+	Proxmox.handle = C.restore_new(cRepo, snapshot, cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
 
 	if Proxmox.handle == nil {
 		err := C.GoString(cErr)
