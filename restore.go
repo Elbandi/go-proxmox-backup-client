@@ -18,6 +18,20 @@ ProxmoxRestoreHandle *restore_new(const char *repo,
 		fingerprint,
 		error);
 }
+ProxmoxRestoreHandle *restore_new_ns(const char *repo,
+									 const char *namespace,
+									 const char *snapshot,
+									 const char *password,
+									 const char *fingerprint,
+									 const char *key_file,
+									 const char *key_password,
+									 char **error) {
+	return proxmox_restore_new_ns(repo, snapshot, namespace,
+		password, key_file, key_password,
+		fingerprint,
+		error);
+}
+
 */
 import "C"
 import (
@@ -29,7 +43,7 @@ type ProxmoxRestore struct {
 	handle *C.ProxmoxRestoreHandle
 }
 
-func NewRestore(repo string, btype string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string) (*ProxmoxRestore, error) {
+func NewRestore(repo string, namespace string, btype string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string) (*ProxmoxRestore, error) {
 	cRepo := C.CString(repo)
 	defer C.free(unsafe.Pointer(cRepo))
 
@@ -68,7 +82,13 @@ func NewRestore(repo string, btype string, id string, backupTime uint64, passwor
 
 	Proxmox := new(ProxmoxRestore)
 
-	Proxmox.handle = C.restore_new(cRepo, snapshot, cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
+	if len(namespace) > 0 {
+		cNameSpace := C.CString(namespace)
+		defer C.free(unsafe.Pointer(cNameSpace))
+		Proxmox.handle = C.restore_new_ns(cRepo, cNameSpace, snapshot, cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
+	} else {
+		Proxmox.handle = C.restore_new(cRepo, snapshot, cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
+	}
 
 	if Proxmox.handle == nil {
 		err := C.GoString(cErr)
