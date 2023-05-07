@@ -14,10 +14,11 @@ ProxmoxBackupHandle *backup_new(const char *repo,
 								const char *fingerprint,
 								const char *key_file,
 								const char *key_password,
+								bool compress,
 								char **error) {
 	return proxmox_backup_new(repo, backup_id, backup_time, PROXMOX_BACKUP_DEFAULT_CHUNK_SIZE,
 		password, key_file, key_password, NULL,
-		false, key_file != NULL && strlen(key_file) > 0,
+		compress, key_file != NULL && strlen(key_file) > 0,
 		fingerprint,
 		error);
 }
@@ -32,7 +33,7 @@ type ProxmoxBackup struct {
 	handle *C.ProxmoxBackupHandle
 }
 
-func NewBackup(repo string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string) (*ProxmoxBackup, error) {
+func NewBackup(repo string, id string, backupTime uint64, password string, fingerprint string, keyFile string, keyPassword string, compress bool) (*ProxmoxBackup, error) {
 	cRepo := C.CString(repo)
 	defer C.free(unsafe.Pointer(cRepo))
 
@@ -60,7 +61,7 @@ func NewBackup(repo string, id string, backupTime uint64, password string, finge
 
 	Proxmox := new(ProxmoxBackup)
 
-	Proxmox.handle = C.backup_new(cRepo, cId, C.ulong(backupTime), cPassword, cFingerprint, cKeyFile, cKeyPassword, &cErr)
+	Proxmox.handle = C.backup_new(cRepo, cId, C.ulong(backupTime), cPassword, cFingerprint, cKeyFile, cKeyPassword, C.bool(compress), &cErr)
 
 	if Proxmox.handle == nil {
 		err := C.GoString(cErr)
