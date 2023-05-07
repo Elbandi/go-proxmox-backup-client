@@ -159,7 +159,7 @@ func (pbs *ProxmoxBackup) RegisterImage(name string, size uint64) (*BackupImage,
 	return &BackupImage{proxmox: pbs, dev: C.uint8_t(uint8(e))}, nil
 }
 
-func (image *BackupImage) Write(data []byte, offset uint64) (int, error) {
+func (image *BackupImage) WriteAt(data []byte, offset int64) (int, error) {
 	var cErr *C.char
 
 	e := C.proxmox_backup_write_data(image.proxmox.handle, image.dev, (*C.uchar)(unsafe.Pointer(&data[0])), C.ulong(offset), C.ulong(len(data)), &cErr)
