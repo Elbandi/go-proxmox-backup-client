@@ -21,7 +21,7 @@ const (
 
 func backup(id string, backupTime time.Time) {
 	t := uint64(backupTime.Unix())
-	client, err := bps.NewBackup(repo, id, t, password, fingerprint)
+	client, err := bps.NewBackup(repo, "", id, t, password, fingerprint, "", "", false)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -34,7 +34,7 @@ func backup(id string, backupTime time.Time) {
 	if err != nil {
 		log.Println(err)
 	} else {
-		fmt.Println(image.Write([]byte("1234567890123456"), 0))
+		fmt.Println(image.WriteAt([]byte("1234567890123456"), 0))
 		fmt.Println(image.Close())
 	}
 	err = client.Finish()
@@ -43,7 +43,7 @@ func backup(id string, backupTime time.Time) {
 
 func restore(id string, backupTime time.Time) {
 	t := uint64(backupTime.Unix())
-	client, err := bps.NewRestore(repo, "vm", id, t, password, fingerprint)
+	client, err := bps.NewRestore(repo, "", "vm", id, t, password, fingerprint, "", "")
 	if err != nil {
 		log.Fatalln(err)
 	}
